@@ -1,8 +1,8 @@
-import * as core from '@actions/core'
-import * as exec from '@actions/exec'
-import { promises as fs } from 'fs'
-import * as os from 'os'
-import * as path from 'path'
+import { info } from '@actions/core'
+import { exec } from '@actions/exec'
+import { mkdtemp, readFile } from 'fs/promises'
+import { tmpdir } from 'os'
+import { join, resolve, relative } from 'path'
 
 type Inputs = {
   executor: string
@@ -26,57 +26,39 @@ type Outputs = {
   digest: string
 }
 
-export const run = async (inputs: Inputs): Promise<Outputs> => {
-  await core.group(`Pulling ${inputs.executor}`, () =>
-    withTime('Pulled', () => exec.exec('docker', ['pull', '-q', inputs.executor])),
-  )
+export async function run(inputs: Inputs): Promise<Outputs> {
+  const runnerTempDir = process.env.RUNNER_TEMP || tmpdir()
+  const outputsDir = await mkdtemp(join(runnerTempDir, 'kaniko-action'))
 
-  const runnerTempDir = process.env.RUNNER_TEMP || os.tmpdir()
-  const outputsDir = await fs.mkdtemp(path.join(runnerTempDir, 'kaniko-action-'))
   const args = generateArgs(inputs, outputsDir)
-  await withTime('Built', () => exec.exec('docker', args))
 
-  const digest = await readContent(`${outputsDir}/digest`)
-  core.info(digest)
+  const start = Date.now()
+  await exec('go', args)
+  const end = Date.now()
+  const seconds = (end - start) / 1000
+  info(`Built in ${seconds}s`)
+
+  const digest = (await readFile(`${outputsDir}/digest`)).toString().trim()
+  info(digest)
   return { digest }
 }
 
-const withTime = async <T>(message: string, f: () => Promise<T>): Promise<T> => {
-  const start = Date.now()
-  const value = await f()
-  const end = Date.now()
-  const seconds = (end - start) / 1000
-  core.info(`${message} in ${seconds}s`)
-  return value
-}
-
-export const generateArgs = (inputs: Inputs, outputsDir: string): string[] => {
+function generateArgs(inputs: Inputs, outputsDir: string): string[] {
   const args = [
-    // docker args
+    // go args
     'run',
-    '--rm',
-    '-v',
-    `${path.resolve(inputs.context)}:/kaniko/action/context:ro`,
-    '-v',
-    `${outputsDir}:/kaniko/action/outputs`,
-    '-v',
-    `${os.homedir()}/.docker/:/kaniko/.docker/:ro`,
-    // workaround for kaniko v1.8.0+
-    // https://github.com/GoogleContainerTools/kaniko/issues/1542#issuecomment-1066028047
-    '-e',
-    'container=docker',
-    inputs.executor,
+    'github.com/GoogleContainerTools/kaniko/cmd/executor@v1.19.2',
     // kaniko args
     '--context',
-    'dir:///kaniko/action/context/',
+    `dir://${resolve(inputs.context)}`,
     '--digest-file',
-    '/kaniko/action/outputs/digest',
+    `${outputsDir}/digest`,
   ]
 
   if (inputs.file) {
-    // docker build command resolves the Dockerfile from the context root
+    // The docker build command resolves the Dockerfile from the context root:
     // https://docs.docker.com/engine/reference/commandline/build/#specify-a-dockerfile--f
-    const dockerfileInContext = path.relative(inputs.context, inputs.file)
+    const dockerfileInContext = relative(inputs.context, inputs.file)
     args.push('--dockerfile', dockerfileInContext)
   }
   for (const buildArg of inputs.buildArgs) {
@@ -117,5 +99,3 @@ export const generateArgs = (inputs: Inputs, outputsDir: string): string[] => {
   args.push(...inputs.kanikoArgs)
   return args
 }
-
-const readContent = async (p: string) => (await fs.readFile(p)).toString().trim()

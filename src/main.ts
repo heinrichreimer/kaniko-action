@@ -1,28 +1,28 @@
-import * as core from '@actions/core'
+import { getInput, getBooleanInput, getMultilineInput, setOutput, setFailed } from '@actions/core'
 import { run } from './run'
 
 const main = async (): Promise<void> => {
   const outputs = await run({
-    executor: core.getInput('executor', { required: true }),
-    cache: core.getBooleanInput('cache'),
-    cacheRepository: core.getInput('cache-repository'),
-    cacheTTL: core.getInput('cache-ttl'),
-    pushRetry: core.getInput('push-retry'),
-    registryMirrors: core.getMultilineInput('registry-mirror'),
-    verbosity: core.getInput('verbosity'),
-    kanikoArgs: core.getMultilineInput('kaniko-args'),
-    buildArgs: core.getMultilineInput('build-args'),
-    context: core.getInput('context'),
-    file: core.getInput('file'),
-    labels: core.getMultilineInput('labels'),
-    push: core.getBooleanInput('push'),
-    tags: core.getMultilineInput('tags'),
-    target: core.getInput('target'),
+    executor: getInput('executor', { required: true }),
+    cache: getBooleanInput('cache'),
+    cacheRepository: getInput('cache-repository'),
+    cacheTTL: getInput('cache-ttl'),
+    pushRetry: getInput('push-retry'),
+    registryMirrors: getMultilineInput('registry-mirror'),
+    verbosity: getInput('verbosity'),
+    kanikoArgs: getMultilineInput('kaniko-args'),
+    buildArgs: getMultilineInput('build-args'),
+    context: getInput('context'),
+    file: getInput('file'),
+    labels: getMultilineInput('labels'),
+    push: getBooleanInput('push'),
+    tags: getMultilineInput('tags'),
+    target: getInput('target'),
   })
-  core.setOutput('digest', outputs.digest)
+  setOutput('digest', outputs.digest)
 }
 
 main().catch((e: Error) => {
-  core.setFailed(e)
+  setFailed(e)
   console.error(e)
 })
