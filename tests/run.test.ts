@@ -20,25 +20,11 @@ const defaultInputs = {
 }
 
 test('default args', () => {
-  const args = generateArgs(defaultInputs, '/tmp/kaniko-action')
+  const args = generateArgs(defaultInputs)
   expect(args).toStrictEqual([
-    // docker args
-    'run',
-    '--rm',
-    '-v',
-    `${process.cwd()}:/kaniko/action/context:ro`,
-    '-v',
-    `/tmp/kaniko-action:/kaniko/action/outputs`,
-    '-v',
-    `${os.homedir()}/.docker/:/kaniko/.docker/:ro`,
-    '-e',
-    'container=docker',
-    'gcr.io/kaniko-project/executor:latest',
     // kaniko args
     '--context',
-    'dir:///kaniko/action/context/',
-    '--digest-file',
-    '/kaniko/action/outputs/digest',
+    'dir:///context/',
     '--no-push',
   ])
 })
@@ -62,26 +48,11 @@ test('full args', () => {
       tags: ['helloworld:latest', 'ghcr.io/int128/kaniko-action/example:v1.0.0'],
       target: 'server',
     },
-    '/tmp/kaniko-action',
   )
   expect(args).toStrictEqual([
-    // docker args
-    'run',
-    '--rm',
-    '-v',
-    `${process.cwd()}/foo/bar:/kaniko/action/context:ro`,
-    '-v',
-    `/tmp/kaniko-action:/kaniko/action/outputs`,
-    '-v',
-    `${os.homedir()}/.docker/:/kaniko/.docker/:ro`,
-    '-e',
-    'container=docker',
-    'gcr.io/kaniko-project/executor:latest',
     // kaniko args
     '--context',
-    'dir:///kaniko/action/context/',
-    '--digest-file',
-    '/kaniko/action/outputs/digest',
+    'dir:///context/',
     '--dockerfile',
     'baz/my.Dockerfile',
     '--build-arg',
@@ -123,26 +94,11 @@ test('with dockerfile', () => {
       ...defaultInputs,
       file: 'my.Dockerfile',
     },
-    '/tmp/kaniko-action',
   )
   expect(args).toStrictEqual([
-    // docker args
-    'run',
-    '--rm',
-    '-v',
-    `${process.cwd()}:/kaniko/action/context:ro`,
-    '-v',
-    `/tmp/kaniko-action:/kaniko/action/outputs`,
-    '-v',
-    `${os.homedir()}/.docker/:/kaniko/.docker/:ro`,
-    '-e',
-    'container=docker',
-    'gcr.io/kaniko-project/executor:latest',
     // kaniko args
     '--context',
-    'dir:///kaniko/action/context/',
-    '--digest-file',
-    '/kaniko/action/outputs/digest',
+    'dir:///context/',
     '--dockerfile',
     'my.Dockerfile',
     '--no-push',

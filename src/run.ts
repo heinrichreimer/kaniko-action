@@ -20,7 +20,6 @@ type Inputs = {
   push: boolean
   tags: string[]
   target: string
-  kubernetesNamespace: string
 }
 
 type Outputs = {
@@ -137,7 +136,7 @@ spec:
 }
 
 export function generateArgs(inputs: Inputs): string[] {
-  const args = ['--context', `dir:///context`]
+  const args = ['--context', `dir:///context/`]
 
   if (inputs.file) {
     // The docker build command resolves the Dockerfile from the context root:
