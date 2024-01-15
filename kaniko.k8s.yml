@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-kaniko
+  namespace: ajjxp
+spec:
+  initContainers:
+    - name: prepare
+      image: devodev/inotify:0.1.0
+      command:
+      - inotifywait
+      - -e
+      - create
+      - /ready
+      resources:
+        limits:
+          cpu: '0.2'
+          memory: '10Mi'
+      volumeMounts:
+        - name: ready
+          mountPath: /ready
+        - name: docker-config
+          mountPath: /docker-config
+        - name: context
+          mountPath: /context
+  containers:
+    - name: build
+      image: gcr.io/kaniko-project/executor:v1.19.2
+      args:
+        - --context=dir:///context
+        - --dockerfile=Dockerfile
+        - --no-push
+      resources:
+        limits:
+          cpu: '1'
+          memory: '10Gi'
+      volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker
+        - name: context
+          mountPath: /context
+  volumes:
+  - name: ready
+    emptyDir:
+      sizeLimit: 1Ki
+  - name: docker-config
+    emptyDir:
+      sizeLimit: 1Gi
+  - name: context
+    emptyDir:
+      sizeLimit: 100Gi
+  restartPolicy: Never
