@@ -228,3 +228,44 @@ jobs:
       - run: kustomize edit set image myapp=${{ steps.ecr.outputs.registry }}/${{ github.repository }}@${{ steps.build.outputs.digest }}
       - run: kustomize build | kubectl apply -f -
 ```
+
+## Development
+
+To build this package and contribute to its development you need to install [Yarn](https://yarnpkg.com/):
+
+### Installation
+
+Install package and test dependencies:
+
+```shell
+yarn install
+```
+
+### Testing
+
+Verify your changes against the test suite to verify.
+
+```shell
+yarn format-check  # Code format
+yarn lint  # LINT errors
+yarn test  # Unit tests
+```
+
+Please also add tests for your newly developed code.
+
+### Build package
+
+This package can be built with:
+
+```shell
+yarn package
+```
+
+## Support
+
+If you hit any problems using this package, please file an [issue](https://github.com/heinrichreimer/kaniko-action/issues/new).
+I'm happy to help!
+
+## License
+
+This repository is released under the [Apache 2.0 license](LICENSE).
