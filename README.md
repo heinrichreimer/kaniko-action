@@ -15,6 +15,7 @@ This action is also compatible with the Docker's official actions such as [docke
 
 ## Usage
 
+To use this action, first [setup access to a Kubernetes cluster](#kubernetes-configuration).
 A minimal example to build a Docker image is given below:
 
 ```yaml
@@ -29,7 +30,46 @@ jobs:
 
 ### Kubernetes configuration
 
-To load `kubectl` and configure access to a Kubernetes cluster, refer to the [azure/setup-kubectl](https://github.com/azure/setup-kubectl) and [azure/k8s-set-context](https://github.com/azure/k8s-set-context) actions.
+This action requires access to a Kubernetes cluster and the `kubectl` executable.
+Setup `kubectl` in your workflow using the [azure/setup-kubectl](https://github.com/azure/setup-kubectl) action:
+
+```yaml
+- uses: azure/setup-kubectl@v3
+```
+
+It is recommended to run the Kaniko pods in a dedicated namespace.
+We provide a Kubernetes YAML file that will create a namespace `kaniko`, a corresponding service account and role bindings that allow the service account to create pods within that namespace.
+Apply it like this:
+
+```shell
+kubectl apply -f kaniko-setup.yml
+```
+
+Now get your Kubernetes cluster URL and service account secret.
+Store the cluster URL in a GitHub secret called `KUBERNETES_URL`. Find your cluster URL by running:
+
+```shell
+kubectl config view --minify -o 'jsonpath={.clusters[0].cluster.server}' && echo
+```
+
+Store the Kubernetes secret in a GitHub secret called `KUBERNETES_SECRET`. To print your secret, run:
+
+```shell
+kubectl get secret kaniko -n kaniko -o yaml
+```
+
+Store the cluster URL in a GitHub secret called `KUBERNETES_URL` and the Kubernetes secret in a GitHub secret called `KUBERNETES_SECRET`.
+Then use the [azure/k8s-set-context](https://github.com/azure/k8s-set-context) action to setup `kubectl` to authenticate with the service account you just created:
+
+```yaml
+- uses: azure/k8s-set-context@v3
+  with:
+    cluster-type: generic
+    method: service-account
+    k8s-url: '${{ secrets.KUBERNETES_URL }}'
+    k8s-secret: '${{ secrets.KUBERNETES_SECRET }}'
+    token: '${{ secrets.KUBERNETES_TOKEN }}'
+```
 
 ### Push to registry
 
@@ -42,6 +82,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
+        with:
+          ...
       - uses: docker/login-action@v1
         with:
           registry: registry.example.com
@@ -64,6 +106,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
+        with:
+          ...
       - uses: docker/metadata-action@v3
         id: metadata
         with:
@@ -88,6 +132,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
+        with:
+          ...
       - uses: docker/login-action@v1
         with:
           registry: registry.example.com
@@ -110,6 +156,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
+        with:
+          ...
       - uses: heinrichreimer/kaniko-action@v1
         id: image
       - run: echo ${{ steps.image.outputs.digest }}
@@ -173,6 +221,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
+        with:
+          ...
       - uses: docker/metadata-action@v3
         id: metadata
         with:
@@ -202,6 +252,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
+        with:
+          ...
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::ACCOUNT:role/ROLE
@@ -231,6 +283,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
+        with:
+          ...
       - uses: aws-actions/amazon-ecr-login@v1
         id: ecr
       - uses: docker/metadata-action@v4
