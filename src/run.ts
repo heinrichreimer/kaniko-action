@@ -30,30 +30,25 @@ type Outputs = {
 export async function run(inputs: Inputs): Promise<Outputs> {
   const contextDir = resolve(inputs.context)
   const dockerConfigDir = resolve('~/.docker')
-  await mkdir(dockerConfigDir, {recursive: true})
+  await mkdir(dockerConfigDir, { recursive: true })
 
   const tempDir = process.env.RUNNER_TEMP || tmpdir()
   const runnerTempDir = await mkdtemp(join(tempDir, 'kaniko-action'))
   const runnerTempFile = join(tempDir, 'kaniko-action.tar.gz')
 
   const startCp = Date.now()
-  await cp(
-    contextDir, join(runnerTempDir, 'context'), 
-    { recursive: true}
-    )
-  await cp(
-    dockerConfigDir, join(runnerTempDir, 'docker-config'),
-     { recursive: true}
-    )
+  await cp(contextDir, join(runnerTempDir, 'context'), { recursive: true })
+  await cp(dockerConfigDir, join(runnerTempDir, 'docker-config'), { recursive: true })
   const endCp = Date.now()
   const secondsCp = (endCp - startCp) / 1000
   info(`Copied build context and Docker config in ${secondsCp}s.`)
 
   const startTar = Date.now()
-  await compress( {
-    gzip: true,
-    cwd: runnerTempDir,
-    file: runnerTempFile,
+  await compress(
+    {
+      gzip: true,
+      cwd: runnerTempDir,
+      file: runnerTempFile,
     },
     ['.'],
   )
@@ -63,24 +58,23 @@ export async function run(inputs: Inputs): Promise<Outputs> {
 
   const args = generateKubectlArgs(inputs)
   const start = Date.now()
-  let output = '';
-  await exec(
-    'kubectl', 
-    args, 
-    {
-      input: await readFile(runnerTempFile),
-      listeners: {
-        stdout: (data: Buffer) => {
-          output += data.toString();
-        },
+  let output = ''
+  await exec('kubectl', args, {
+    input: await readFile(runnerTempFile),
+    listeners: {
+      stdout: (data: Buffer) => {
+        output += data.toString()
       },
     },
-  )
+  })
   const end = Date.now()
   const seconds = (end - start) / 1000
   info(`Built image in ${seconds}s.`)
 
-  const digest = output.split('\n').filter(line => line.startsWith("sha256:"))[-1].trim()
+  const digest = output
+    .split('\n')
+    .filter((line) => line.startsWith('sha256:'))
+    [-1].trim()
   info(digest)
   return { digest }
 }
@@ -98,7 +92,7 @@ export function generateKubectlArgs(inputs: Inputs): string[] {
     '--',
     'sh',
     '-c',
-    kubectlRunCommands.join(' && ')
+    kubectlRunCommands.join(' && '),
   ]
   return args
 }
@@ -106,9 +100,9 @@ export function generateKubectlArgs(inputs: Inputs): string[] {
 export function generateKubectlRunCommands(inputs: Inputs): string[] {
   const kanikoArgs = generateKanikoArgs(inputs)
   const commands = [
-    "mkdir /inputs",
-    "tar -xzf - -C /inputs",
-    "cp -r /inputs/docker-config /kaniko/.docker",
+    'mkdir /inputs',
+    'tar -xzf - -C /inputs',
+    'cp -r /inputs/docker-config /kaniko/.docker',
     `/kaniko/executor ${kanikoArgs.join(' ')}`,
     'cat /outputs/digest',
     'echo',
@@ -117,12 +111,7 @@ export function generateKubectlRunCommands(inputs: Inputs): string[] {
 }
 
 export function generateKanikoArgs(inputs: Inputs): string[] {
-  const args = [
-    '--context',
-    'dir:///inputs/context',
-    '--digest-file',
-    '/outputs/digest',
-  ]
+  const args = ['--context', 'dir:///inputs/context', '--digest-file', '/outputs/digest']
 
   if (inputs.file) {
     // The docker build command resolves the Dockerfile from the context root:

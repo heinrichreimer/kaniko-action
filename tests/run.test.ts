@@ -20,33 +20,27 @@ const defaultInputs = {
 
 test('default args', () => {
   const args = generateKanikoArgs(defaultInputs)
-  expect(args).toStrictEqual([
-    '--context',
-    'dir:///inputs/context',
-    '--no-push',
-  ])
+  expect(args).toStrictEqual(['--context', 'dir:///inputs/context', '--no-push'])
 })
 
 test('full args', () => {
-  const args = generateKanikoArgs(
-    {
-      executor: 'gcr.io/kaniko-project/executor:debug',
-      cache: true,
-      cacheRepository: 'ghcr.io/heinrichreimer/kaniko-action/cache',
-      cacheTTL: '30d',
-      pushRetry: '100',
-      registryMirrors: ['mirror.example.com', 'mirror.gcr.io'],
-      verbosity: 'debug',
-      kanikoArgs: ['--skip-tls-verify', '--help'],
-      buildArgs: ['foo=1', 'bar=2'],
-      context: 'foo/bar',
-      file: 'foo/bar/baz/my.Dockerfile',
-      labels: ['org.opencontainers.image.description=foo', 'org.opencontainers.image.url=https://example.com'],
-      push: false,
-      tags: ['helloworld:latest', 'ghcr.io/heinrichreimer/kaniko-action/example:1.0.0'],
-      target: 'server',
-    },
-  )
+  const args = generateKanikoArgs({
+    executor: 'gcr.io/kaniko-project/executor:debug',
+    cache: true,
+    cacheRepository: 'ghcr.io/heinrichreimer/kaniko-action/cache',
+    cacheTTL: '30d',
+    pushRetry: '100',
+    registryMirrors: ['mirror.example.com', 'mirror.gcr.io'],
+    verbosity: 'debug',
+    kanikoArgs: ['--skip-tls-verify', '--help'],
+    buildArgs: ['foo=1', 'bar=2'],
+    context: 'foo/bar',
+    file: 'foo/bar/baz/my.Dockerfile',
+    labels: ['org.opencontainers.image.description=foo', 'org.opencontainers.image.url=https://example.com'],
+    push: false,
+    tags: ['helloworld:latest', 'ghcr.io/heinrichreimer/kaniko-action/example:1.0.0'],
+    target: 'server',
+  })
   expect(args).toStrictEqual([
     '--context',
     'dir:///inputs/context',
@@ -86,17 +80,9 @@ test('full args', () => {
 })
 
 test('with dockerfile', () => {
-  const args = generateKanikoArgs(
-    {
-      ...defaultInputs,
-      file: 'my.Dockerfile',
-    },
-  )
-  expect(args).toStrictEqual([
-    '--context',
-    'dir:///inputs/context',
-    '--dockerfile',
-    'my.Dockerfile',
-    '--no-push',
-  ])
+  const args = generateKanikoArgs({
+    ...defaultInputs,
+    file: 'my.Dockerfile',
+  })
+  expect(args).toStrictEqual(['--context', 'dir:///inputs/context', '--dockerfile', 'my.Dockerfile', '--no-push'])
 })
