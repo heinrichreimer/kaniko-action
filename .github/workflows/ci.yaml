@@ -1,5 +1,4 @@
-name: ts
-
+name: CI
 on:
   pull_request:
     paths:
@@ -17,33 +16,36 @@ on:
       - '*.json'
       - action.yaml
       - .github/workflows/ts.yaml
-
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: yarn
       - run: yarn
       - run: yarn test
       - run: yarn build
       - run: yarn package
-
-      - uses: docker/metadata-action@dbef88086f6cef02e264edb7dbf63250c17cef6c # v5.5.0
+      - uses: docker/metadata-action@v5
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}/example
-      - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: int128/kaniko-action
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: service-account
+          k8s-url: <URL of the cluster's API server>
+          k8s-secret: <secret associated with the service account>
+      - name: heinrichreimer/kaniko-action
         id: build
         uses: ./
         with:
@@ -52,8 +54,7 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           context: tests/fixtures
       - run: test '${{ steps.build.outputs.digest }}'
-
-      - name: int128/kaniko-action
+      - name: heinrichreimer/kaniko-action
         id: build-with-cache
         uses: ./
         with:
@@ -64,17 +65,16 @@ jobs:
           cache: true
           cache-repository: ghcr.io/${{ github.repository }}/cache
       - run: test '${{ steps.build-with-cache.outputs.digest }}'
-
   generate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: yarn
       - run: yarn
       - run: yarn lint --fix
       - run: yarn format
-      - uses: int128/update-generated-files-action@1c892bb06bee834aaea172d2dc36fc772f59c1df # v2.47.0
+      - uses: int128/update-generated-files-action@v2
