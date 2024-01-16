@@ -4,7 +4,7 @@
 [![Commit activity](https://img.shields.io/github/commit-activity/m/heinrichreimer/kaniko-action?style=flat-square)](https://github.com/heinrichreimer/kaniko-action/commits)
 [![License](https://img.shields.io/github/license/heinrichreimer/kaniko-action?style=flat-square)](LICENSE)
 
-# 📦 kaniko-action
+# 📦 kaniko-action **work in progress**
 
 [GitHub Action](https://github.com/features/actions) to build and push container images with [Kaniko](https://github.com/GoogleContainerTools/kaniko).
 
