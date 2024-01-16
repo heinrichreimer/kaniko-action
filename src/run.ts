@@ -1,8 +1,9 @@
 import { info } from '@actions/core'
 import { exec } from '@actions/exec'
-import { mkdtemp, readFile } from 'fs/promises'
+import { mkdtemp, readFile, cp, mkdir } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, resolve, relative } from 'path'
+import { c as compress } from 'tar'
 
 type Inputs = {
   executor: string
@@ -29,114 +30,99 @@ type Outputs = {
 export async function run(inputs: Inputs): Promise<Outputs> {
   const contextDir = resolve(inputs.context)
   const dockerConfigDir = resolve('~/.docker')
-  const runnerTempDir = process.env.RUNNER_TEMP || tmpdir()
-  const outputsDir = await mkdtemp(join(runnerTempDir, 'kaniko-action-outputs'))
+  await mkdir(dockerConfigDir, {recursive: true})
 
-  // TODO: Build kaniko args
-  const args = generateArgs(inputs)
+  const tempDir = process.env.RUNNER_TEMP || tmpdir()
+  const runnerTempDir = await mkdtemp(join(tempDir, 'kaniko-action'))
+  const runnerTempFile = join(tempDir, 'kaniko-action.tar.gz')
 
-  // TODO: Start executor pod
-  // kubectl create -f kaniko.k8s.yml
-  await exec('kubectl', ['apply', '-f', '-'], {
-    input: Buffer.from(
-      `
-apiVersion: v1
-kind: Pod
-metadata:
-  name: test-kaniko
-  namespace: ajjxp
-spec:
-  initContainers:
-    - name: prepare
-      image: devodev/inotify:0.1.0
-      command:
-      - inotifywait
-      - -e
-      - create
-      - /ready
-      resources:
-        limits:
-          cpu: '0.2'
-          memory: '10Mi'
-      volumeMounts:
-        - name: ready
-          mountPath: /ready
-        - name: docker-config
-          mountPath: /docker-config
-        - name: context
-          mountPath: /context
-  containers:
-    - name: build
-      image: gcr.io/kaniko-project/executor:v1.19.2
-      args:
-        - --context=dir:///context
-        - --dockerfile=Dockerfile
-        - --no-push
-      resources:
-        limits:
-          cpu: '1'
-          memory: '10Gi'
-      volumeMounts:
-        - name: docker-config
-          mountPath: /kaniko/.docker
-        - name: context
-          mountPath: /context
-  volumes:
-  - name: ready
-    emptyDir:
-      sizeLimit: 1Ki
-  - name: docker-config
-    emptyDir:
-      sizeLimit: 1Gi
-  - name: context
-    emptyDir:
-      sizeLimit: 100Gi
-  restartPolicy: Never
-      `,
-      'utf8',
-    ),
-  })
+  const startCp = Date.now()
+  await cp(
+    contextDir, join(runnerTempDir, 'context'), 
+    { recursive: true}
+    )
+  await cp(
+    dockerConfigDir, join(runnerTempDir, 'docker-config'),
+     { recursive: true}
+    )
+  const endCp = Date.now()
+  const secondsCp = (endCp - startCp) / 1000
+  info(`Copied build context and Docker config in ${secondsCp}s.`)
 
-  // TODO: Wait for exec container
-  await delay(5000)
+  const startTar = Date.now()
+  await compress( {
+    gzip: true,
+    cwd: runnerTempDir,
+    file: runnerTempFile,
+    },
+    ['.'],
+  )
+  const endTar = Date.now()
+  const secondsTar = (endTar - startTar) / 1000
+  info(`Compressed build context and Docker config in ${secondsTar}s.`)
 
-  // TODO: Upload build context
-  // tar -czf - -C tests/fixtures/ . | kubectl exec -i test-kaniko -c prepare -- tar -xzf - -C /context
-  await exec('sh', [
-    '-c',
-    `tar -czf - -C ${contextDir} . | kubectl exec -i test-kaniko -c prepare -- tar -xzf - -C /context`,
-  ])
+  const args = generateKubectlArgs(inputs)
+  const start = Date.now()
+  let output = '';
+  await exec(
+    'kubectl', 
+    args, 
+    {
+      input: await readFile(runnerTempFile),
+      listeners: {
+        stdout: (data: Buffer) => {
+          output += data.toString();
+        },
+      },
+    },
+  )
+  const end = Date.now()
+  const seconds = (end - start) / 1000
+  info(`Built image in ${seconds}s.`)
 
-  // TODO: Upload .docker folder
-  // tar -czf - -C ~/.docker/ . | kubectl exec -i test-kaniko -c prepare -- tar -xzf - -C /docker-config
-  await exec('sh', [
-    '-c',
-    `tar -czf - -C ${dockerConfigDir} . | kubectl exec -i test-kaniko -c prepare -- tar -xzf - -C /docker-config`,
-  ])
-
-  // TODO: Create ready file
-  // kubectl exec test-kaniko -c prepare -- touch /ready/yes
-  await exec('kubectl', ['exec', 'test-kaniko', '-c', 'prepare', '--', 'touch', '/ready/yes'])
-
-  // TODO: Wait for pod completion
-  // kubectl wait pod test-kaniko --for condition=Ready --timeout=5m
-
-  // TODO: Delete pod
-  // kubectl delete pod test-kaniko
-
-  // const start = Date.now()
-  // await exec('go', args)
-  // const end = Date.now()
-  // const seconds = (end - start) / 1000
-  // info(`Built in ${seconds}s`)
-
-  const digest = (await readFile(`${outputsDir}/digest`)).toString().trim()
+  const digest = output.split('\n').filter(line => line.startsWith("sha256:"))[-1].trim()
   info(digest)
   return { digest }
 }
 
-export function generateArgs(inputs: Inputs): string[] {
-  const args = ['--context', `dir:///context/`]
+export function generateKubectlArgs(inputs: Inputs): string[] {
+  const kubectlRunCommands = generateKubectlRunCommands(inputs)
+  const args = [
+    'run',
+    'kaniko',
+    '--rm',
+    '--stdin',
+    `--image='${inputs.executor}'`,
+    `--restart='Never'`,
+    '--command',
+    '--',
+    'sh',
+    '-c',
+    kubectlRunCommands.join(' && ')
+  ]
+  return args
+}
+
+export function generateKubectlRunCommands(inputs: Inputs): string[] {
+  const kanikoArgs = generateKanikoArgs(inputs)
+  const commands = [
+    "mkdir /inputs",
+    "tar -xzf - -C /inputs",
+    "cp -r /inputs/docker-config /kaniko/.docker",
+    `/kaniko/executor ${kanikoArgs.join(' ')}`,
+    'cat /outputs/digest',
+    'echo',
+  ]
+  return commands
+}
+
+export function generateKanikoArgs(inputs: Inputs): string[] {
+  const args = [
+    '--context',
+    'dir:///inputs/context',
+    '--digest-file',
+    '/outputs/digest',
+  ]
 
   if (inputs.file) {
     // The docker build command resolves the Dockerfile from the context root:
@@ -181,8 +167,4 @@ export function generateArgs(inputs: Inputs): string[] {
 
   args.push(...inputs.kanikoArgs)
   return args
-}
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }

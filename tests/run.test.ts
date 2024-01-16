@@ -1,8 +1,7 @@
-import * as os from 'os'
-import { generateArgs } from '../src/run'
+import { generateKanikoArgs } from '../src/run'
 
 const defaultInputs = {
-  executor: 'gcr.io/kaniko-project/executor:latest',
+  executor: 'gcr.io/kaniko-project/executor:debug',
   cache: false,
   cacheRepository: '',
   cacheTTL: '',
@@ -20,21 +19,20 @@ const defaultInputs = {
 }
 
 test('default args', () => {
-  const args = generateArgs(defaultInputs)
+  const args = generateKanikoArgs(defaultInputs)
   expect(args).toStrictEqual([
-    // kaniko args
     '--context',
-    'dir:///context/',
+    'dir:///inputs/context',
     '--no-push',
   ])
 })
 
 test('full args', () => {
-  const args = generateArgs(
+  const args = generateKanikoArgs(
     {
-      executor: 'gcr.io/kaniko-project/executor:latest',
+      executor: 'gcr.io/kaniko-project/executor:debug',
       cache: true,
-      cacheRepository: 'ghcr.io/int128/kaniko-action/cache',
+      cacheRepository: 'ghcr.io/heinrichreimer/kaniko-action/cache',
       cacheTTL: '30d',
       pushRetry: '100',
       registryMirrors: ['mirror.example.com', 'mirror.gcr.io'],
@@ -43,16 +41,15 @@ test('full args', () => {
       buildArgs: ['foo=1', 'bar=2'],
       context: 'foo/bar',
       file: 'foo/bar/baz/my.Dockerfile',
-      labels: ['org.opencontainers.image.description=foo', 'org.opencontainers.image.url=https://www.example.com'],
+      labels: ['org.opencontainers.image.description=foo', 'org.opencontainers.image.url=https://example.com'],
       push: false,
-      tags: ['helloworld:latest', 'ghcr.io/int128/kaniko-action/example:v1.0.0'],
+      tags: ['helloworld:latest', 'ghcr.io/heinrichreimer/kaniko-action/example:1.0.0'],
       target: 'server',
     },
   )
   expect(args).toStrictEqual([
-    // kaniko args
     '--context',
-    'dir:///context/',
+    'dir:///inputs/context',
     '--dockerfile',
     'baz/my.Dockerfile',
     '--build-arg',
@@ -62,17 +59,17 @@ test('full args', () => {
     '--label',
     'org.opencontainers.image.description=foo',
     '--label',
-    'org.opencontainers.image.url=https://www.example.com',
+    'org.opencontainers.image.url=https://example.com',
     '--no-push',
     '--destination',
     'helloworld:latest',
     '--destination',
-    'ghcr.io/int128/kaniko-action/example:v1.0.0',
+    'ghcr.io/heinrichreimer/kaniko-action/example:1.0.0',
     '--target',
     'server',
     '--cache=true',
     '--cache-repo',
-    'ghcr.io/int128/kaniko-action/cache',
+    'ghcr.io/heinrichreimer/kaniko-action/cache',
     '--cache-ttl',
     '30d',
     '--push-retry',
@@ -89,16 +86,15 @@ test('full args', () => {
 })
 
 test('with dockerfile', () => {
-  const args = generateArgs(
+  const args = generateKanikoArgs(
     {
       ...defaultInputs,
       file: 'my.Dockerfile',
     },
   )
   expect(args).toStrictEqual([
-    // kaniko args
     '--context',
-    'dir:///context/',
+    'dir:///inputs/context',
     '--dockerfile',
     'my.Dockerfile',
     '--no-push',
