@@ -8,7 +8,7 @@
 
 [GitHub Action](https://github.com/features/actions) to build and push container images with [Kaniko](https://github.com/GoogleContainerTools/kaniko).
 
-This action uses [Go](https://go.dev/) to execute Kaniko and so neither relies on Docker to build the action (e.g., as [aevea/action-kaniko](https://github.com/aevea/action-kaniko) does) nor to execute Kaniko itself (e.g., like [int128/kaniko-action](https://github.com/int128/kaniko-action)).
+This action runs Kaniko on [Kubernetes](https://kubernetes.io/) and so neither relies on Docker to build the action (e.g., as [aevea/action-kaniko](https://github.com/aevea/action-kaniko) does) nor to execute Kaniko itself (e.g., like [int128/kaniko-action](https://github.com/int128/kaniko-action)).
 Hence, it can be used with [self-hosted runners](https://docs.github.com/en/actions/hosting-your-own-runners) that are scheduled in container environments such as [Kubernetes](https://kubernetes.io/).
 
 This action is also compatible with the Docker's official actions such as [docker/login-action](https://github.com/docker/login-action) or [docker/metadata-action](https://github.com/docker/metadata-action).
@@ -22,8 +22,14 @@ jobs:
   build:
     steps:
       - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
       - uses: heinrichreimer/kaniko-action@v1
 ```
+
+### Kubernetes configuration
+
+To load `kubectl` and configure access to a Kubernetes cluster, refer to the [azure/setup-kubectl](https://github.com/azure/setup-kubectl) and [azure/k8s-set-context](https://github.com/azure/k8s-set-context) actions.
 
 ### Push to registry
 
@@ -34,6 +40,8 @@ jobs:
   build:
     steps:
       - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
       - uses: docker/login-action@v1
         with:
           registry: registry.example.com
@@ -54,6 +62,8 @@ jobs:
   build:
     steps:
       - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
       - uses: docker/metadata-action@v3
         id: metadata
         with:
@@ -76,6 +86,8 @@ jobs:
   build:
     steps:
       - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
       - uses: docker/login-action@v1
         with:
           registry: registry.example.com
@@ -96,6 +108,8 @@ jobs:
   build:
     steps:
       - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
       - uses: heinrichreimer/kaniko-action@v1
         id: image
       - run: echo ${{ steps.image.outputs.digest }}
@@ -157,6 +171,8 @@ jobs:
   build:
     steps:
       - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
       - uses: docker/metadata-action@v3
         id: metadata
         with:
@@ -184,6 +200,8 @@ jobs:
   build:
     steps:
       - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::ACCOUNT:role/ROLE
@@ -211,6 +229,8 @@ jobs:
   deploy:
     steps:
       - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - uses: azure/k8s-set-context@v3
       - uses: aws-actions/amazon-ecr-login@v1
         id: ecr
       - uses: docker/metadata-action@v4
