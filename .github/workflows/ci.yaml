@@ -45,7 +45,7 @@ jobs:
           method: service-account
           k8s-url: <URL of the cluster's API server>
           k8s-secret: <secret associated with the service account>
-      - name: heinrichreimer/kaniko-action
+      - name: janheinrichmerker/kaniko-action
         id: build
         uses: ./
         with:
@@ -54,7 +54,7 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           context: tests/fixtures
       - run: test '${{ steps.build.outputs.digest }}'
-      - name: heinrichreimer/kaniko-action
+      - name: janheinrichmerker/kaniko-action
         id: build-with-cache
         uses: ./
         with:

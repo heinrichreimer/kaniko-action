@@ -27,7 +27,7 @@ test('full args', () => {
   const args = generateKanikoArgs({
     executor: 'gcr.io/kaniko-project/executor:debug',
     cache: true,
-    cacheRepository: 'ghcr.io/heinrichreimer/kaniko-action/cache',
+    cacheRepository: 'ghcr.io/janheinrichmerker/kaniko-action/cache',
     cacheTTL: '30d',
     pushRetry: '100',
     registryMirrors: ['mirror.example.com', 'mirror.gcr.io'],
@@ -38,7 +38,7 @@ test('full args', () => {
     file: 'foo/bar/baz/my.Dockerfile',
     labels: ['org.opencontainers.image.description=foo', 'org.opencontainers.image.url=https://example.com'],
     push: false,
-    tags: ['helloworld:latest', 'ghcr.io/heinrichreimer/kaniko-action/example:1.0.0'],
+    tags: ['helloworld:latest', 'ghcr.io/janheinrichmerker/kaniko-action/example:1.0.0'],
     target: 'server',
   })
   expect(args).toStrictEqual([
@@ -60,12 +60,12 @@ test('full args', () => {
     '--destination',
     'helloworld:latest',
     '--destination',
-    'ghcr.io/heinrichreimer/kaniko-action/example:1.0.0',
+    'ghcr.io/janheinrichmerker/kaniko-action/example:1.0.0',
     '--target',
     'server',
     '--cache=true',
     '--cache-repo',
-    'ghcr.io/heinrichreimer/kaniko-action/cache',
+    'ghcr.io/janheinrichmerker/kaniko-action/cache',
     '--cache-ttl',
     '30d',
     '--push-retry',

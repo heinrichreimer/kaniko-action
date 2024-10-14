@@ -1,8 +1,8 @@
-[![CI](https://img.shields.io/github/actions/workflow/status/heinrichreimer/kaniko-action/ci.yml?branch=main&style=flat-square)](https://github.com/heinrichreimer/kaniko-action/actions/workflows/ci.yml)
-[![GitHub Tag](https://img.shields.io/github/v/tag/heinrichreimer/kaniko-action?sort=semver&style=flat-square)](https://github.com/heinrichreimer/kaniko-action/releases)
-[![Issues](https://img.shields.io/github/issues/heinrichreimer/kaniko-action?style=flat-square)](https://github.com/heinrichreimer/kaniko-action/issues)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/heinrichreimer/kaniko-action?style=flat-square)](https://github.com/heinrichreimer/kaniko-action/commits)
-[![License](https://img.shields.io/github/license/heinrichreimer/kaniko-action?style=flat-square)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/janheinrichmerker/kaniko-action/ci.yml?branch=main&style=flat-square)](https://github.com/janheinrichmerker/kaniko-action/actions/workflows/ci.yml)
+[![GitHub Tag](https://img.shields.io/github/v/tag/janheinrichmerker/kaniko-action?sort=semver&style=flat-square)](https://github.com/janheinrichmerker/kaniko-action/releases)
+[![Issues](https://img.shields.io/github/issues/janheinrichmerker/kaniko-action?style=flat-square)](https://github.com/janheinrichmerker/kaniko-action/issues)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/janheinrichmerker/kaniko-action?style=flat-square)](https://github.com/janheinrichmerker/kaniko-action/commits)
+[![License](https://img.shields.io/github/license/janheinrichmerker/kaniko-action?style=flat-square)](LICENSE)
 
 # 📦 kaniko-action **work in progress**
 
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: azure/setup-kubectl@v3
       - uses: azure/k8s-set-context@v3
-      - uses: heinrichreimer/kaniko-action@v1
+      - uses: janheinrichmerker/kaniko-action@v1
 ```
 
 ### Kubernetes configuration
@@ -89,7 +89,7 @@ jobs:
           registry: registry.example.com
           username: foo
           password: bar
-      - uses: heinrichreimer/kaniko-action@v1
+      - uses: janheinrichmerker/kaniko-action@v1
         with:
           push: true
           tags: registry.example.com/my-image
@@ -112,7 +112,7 @@ jobs:
         id: metadata
         with:
           images: registry.example.com/my-image
-      - uses: heinrichreimer/kaniko-action@v1
+      - uses: janheinrichmerker/kaniko-action@v1
         with:
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
@@ -139,7 +139,7 @@ jobs:
           registry: registry.example.com
           username: foo
           password: bar
-      - uses: heinrichreimer/kaniko-action@v1
+      - uses: janheinrichmerker/kaniko-action@v1
         with:
           cache: true
           cache-repository: registry.example.com/my-image/cache
@@ -158,7 +158,7 @@ jobs:
       - uses: azure/k8s-set-context@v3
         with:
           ...
-      - uses: heinrichreimer/kaniko-action@v1
+      - uses: janheinrichmerker/kaniko-action@v1
         id: image
       - run: echo ${{ steps.image.outputs.digest }}
 
@@ -232,7 +232,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: heinrichreimer/kaniko-action@v1
+      - uses: janheinrichmerker/kaniko-action@v1
         with:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
@@ -263,7 +263,7 @@ jobs:
         id: metadata
         with:
           images: ${{ steps.ecr.outputs.registry }}/${{ github.repository }}
-      - uses: heinrichreimer/kaniko-action@v1
+      - uses: janheinrichmerker/kaniko-action@v1
         with:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
@@ -291,7 +291,7 @@ jobs:
         id: metadata
         with:
           images: ${{ steps.ecr.outputs.registry }}/${{ github.repository }}
-      - uses: heinrichreimer/kaniko-action@v1
+      - uses: janheinrichmerker/kaniko-action@v1
         id: build
         with:
           push: true
@@ -337,7 +337,7 @@ yarn package
 
 ## Support
 
-If you hit any problems using this package, please file an [issue](https://github.com/heinrichreimer/kaniko-action/issues/new).
+If you hit any problems using this package, please file an [issue](https://github.com/janheinrichmerker/kaniko-action/issues/new).
 I'm happy to help!
 
 ## License
